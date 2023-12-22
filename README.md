@@ -1,11 +1,6 @@
-# Federated-Learning (PyTorch)
+# Deep Gradient Compression based on Federated-Learning (PyTorch)
 
-Implementation of the vanilla federated learning paper : [Communication-Efficient Learning of Deep Networks from Decentralized Data](https://arxiv.org/abs/1602.05629).
-
-
-Experiments are produced on MNIST, Fashion MNIST and CIFAR10 (both IID and non-IID). In case of non-IID, the data amongst the users can be split equally or unequally.
-
-Since the purpose of these experiments are to illustrate the effectiveness of the federated learning paradigm, only simple models such as MLP and CNN are used.
+[Deep Gradient Compression: Reducing the Communication Bandwidth for Distributed Training](https://openreview.net/forum?id=SkhQHMW0W)
 
 ## Requirments
 Install all the packages from requirments.txt
@@ -71,41 +66,4 @@ Parameters: <br />
 * ```Optimizer:```    : SGD 
 * ```Learning Rate:``` 0.01
 
-```Table 1:``` Test accuracy after training for 10 epochs:
 
-| Model | Test Acc |
-| ----- | -----    |
-|  MLP  |  92.71%  |
-|  CNN  |  98.42%  |
-
-----
-
-#### Federated Experiment:
-The experiment involves training a global model in the federated setting.
-
-Federated parameters (default values):
-* ```Fraction of users (C)```: 0.1 
-* ```Local Batch size  (B)```: 10 
-* ```Local Epochs      (E)```: 10 
-* ```Optimizer            ```: SGD 
-* ```Learning Rate        ```: 0.01 <br />
-
-```Table 2:``` Test accuracy after training for 10 global epochs with:
-
-| Model |    IID   | Non-IID (equal)|
-| ----- | -----    |----            |
-|  MLP  |  88.38%  |     73.49%     |
-|  CNN  |  97.28%  |     75.94%     |
-
-
-## Further Readings
-### Papers:
-* [Federated Learning: Challenges, Methods, and Future Directions](https://arxiv.org/abs/1908.07873)
-* [Communication-Efficient Learning of Deep Networks from Decentralized Data](https://arxiv.org/abs/1602.05629)
-* [Deep Learning with Differential Privacy](https://arxiv.org/abs/1607.00133)
-
-### Blog Posts:
-* [CMU MLD Blog Post: Federated Learning: Challenges, Methods, and Future Directions](https://blog.ml.cmu.edu/2019/11/12/federated-learning-challenges-methods-and-future-directions/)
-* [Leaf: A Benchmark for Federated Settings (CMU)](https://leaf.cmu.edu/)
-* [TensorFlow Federated](https://www.tensorflow.org/federated)
-* [Google AI Blog Post](https://ai.googleblog.com/2017/04/federated-learning-collaborative.html)

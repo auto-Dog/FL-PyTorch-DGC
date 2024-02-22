@@ -61,7 +61,7 @@ class LocalUpdate(object):
         # Set mode to train model
         model.train()
         epoch_loss = []
-        if gradient_store == None: # 第一轮训练，用于更新的梯度值为0
+        if gradient_store == None: # 第一轮训练，用于更新的梯度值为0。 gradient_store即论文中的v_tk-1，也即G^k_t-1
             gradient_store = model.state_dict()
             for key,val in gradient_store.items():
                 gradient_store[key] = val*0.0
@@ -87,7 +87,7 @@ class LocalUpdate(object):
                 log_probs = model(images)
                 loss = self.criterion(log_probs, labels)
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10)     # clip gradient
+                # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10)     # clip gradient
                 optimizer.step()
 
                 if self.args.verbose and (batch_idx % 10 == 0):
@@ -98,17 +98,17 @@ class LocalUpdate(object):
                 self.logger.add_scalar('loss', loss.item())
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
-        gradient_update = calculate_gradient(model_dict_ori,model.state_dict())
-        gradient_update = merge_gradient(gradient_update,last_update,0.5)   # 考虑动量的梯度更新 u_k,t
-        last_update_out = gradient_update
-        gradient_update = merge_gradient(gradient_store,gradient_update)    # G_t = G_t + G_(t-1)
+        gradient_update_partial = calculate_gradient(model_dict_ori,model.state_dict())
+        gradient_update_u = merge_gradient(gradient_update_partial,last_update,0.5)   # 考虑动量的梯度更新 u_k,t
+        last_update_out = gradient_update_u   # 输出并存储uk,t
+        gradient_update_v = merge_gradient(gradient_store,gradient_update_u)    # v_kt = v_kt-1 + u_kt
         # sparse_rates = [0.75,0.9375,0.9843,0.99]    # 热身阶段的稀疏率
         sparse_rates = [0.75,0.75,0.75,0.80]
         if global_round<4:
             sparse_rate = sparse_rates[global_round]
         else:
             sparse_rate = sparse_rates[-1]
-        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update,sparse_rate)    # 计算G_t的主要梯度和次要梯度
+        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate)    # 计算稀疏后的~G_t和被稀疏部分G_t
         del model
         return gradient_update,gradient_store,last_update_out,sum(epoch_loss) / len(epoch_loss)
 
@@ -145,20 +145,19 @@ class LocalUpdate(object):
         mask_dict_inv = copy.deepcopy(model)
         for key,tensors in model.items():
             flat_tensors = torch.flatten(tensors)
-            # 目前取k=75
             tensor_len = len(flat_tensors)
             sample_num = min(tensor_len,80)
-            index = torch.LongTensor(random.sample(range(tensor_len),sample_num))
+            index = torch.LongTensor(random.sample(range(tensor_len),sample_num))   # 随机从tensor中选取sample_num个元素，找到阈值
             samples = flat_tensors[index]
-            thr = torch.topk(torch.abs(samples),k=int(np.ceil(sample_num*(1-sparse_rate))))[0][-1]
+            thr = torch.topk(torch.abs(samples),k=int(np.ceil(sample_num*(1-sparse_rate))))[0][-1]  # 取绝对值排在前(1-k)%的元素作为阈值
             # torch.tensor(1/np.sqrt(self.args.num_users))
             mask_j = mask_dict[key]
             mask_j[torch.abs(mask_j)<thr] = 0
-            mask_dict[key] = mask_j
+            mask_dict[key] = mask_j # 完成mask_dict[key]中小元素置零，其他元素不变
 
             mask_j_inv = mask_dict_inv[key]
             mask_j_inv[torch.abs(mask_j_inv)>thr] = 0
-            mask_dict_inv[key] = mask_j_inv
+            mask_dict_inv[key] = mask_j_inv # 完成mask_dict_inv[key]中大元素置零，其他元素不变
         # print('Ori upload pack norm:',torch.norm(tensors))  # debug
         # print('sparse upload pack norm:',torch.norm(mask_j))    # debug
         return mask_dict, mask_dict_inv
@@ -195,7 +194,7 @@ def test_inference(args, model, test_dataset):
 
 def calculate_gradient(model_ori:dict,model:dict)->dict:
     '''
-    Return the gradient update
+    Return the gradient update, model-model_ori
     '''
     if model_ori.keys() != model.keys():
         raise RuntimeError('Models do not has same structure')
@@ -205,18 +204,16 @@ def calculate_gradient(model_ori:dict,model:dict)->dict:
 
     return gradient
 
-def merge_gradient(gradient1:dict,gradient2:dict,momentum = None)->dict:
+def merge_gradient(gradient1:dict,gradient2:dict,momentum = 0.0)->dict:
     '''
     Return plus of two gradient. Momentum will scale the later gradient if it exists
+    out = gradient1 + momentum*gradient2
     '''
     if gradient1.keys() != gradient2.keys():
         raise RuntimeError('Models do not has same structure')
     gradient = {}
-    if momentum != None:
-        for key,_ in gradient1.items():
-            gradient[key] = gradient1[key] + gradient2[key] * momentum
     for key,_ in gradient1.items():
-        gradient[key] = gradient1[key] + gradient2[key]
+        gradient[key] = gradient1[key] + gradient2[key] * momentum
 
     return gradient
 

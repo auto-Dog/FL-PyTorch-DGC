@@ -80,7 +80,7 @@ if __name__ == '__main__':
     local_gradient_store = [None for i in range(args.num_users)]
     momentum_gradient_store = [None for i in range(args.num_users)]
     for epoch in tqdm(range(args.epochs),ascii=True):
-        local_weights, local_losses,  = [], []
+        local_weights, local_losses = [], []
         # print(f'\n | Global Training Round : {epoch+1} |\n')
 
         global_model.train()

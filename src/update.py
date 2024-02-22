@@ -99,16 +99,17 @@ class LocalUpdate(object):
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
         gradient_update_partial = calculate_gradient(model_dict_ori,model.state_dict())
-        gradient_update_u = merge_gradient(gradient_update_partial,last_update,0.5)   # 考虑动量的梯度更新 u_k,t
+        gradient_update_u = merge_gradient(gradient_update_partial,last_update,0.)   # 考虑动量的梯度更新 u_k,t
         last_update_out = gradient_update_u   # 输出并存储uk,t
-        gradient_update_v = merge_gradient(gradient_store,gradient_update_u)    # v_kt = v_kt-1 + u_kt
+        gradient_update_v = gradient_update_u # = merge_gradient(gradient_store,gradient_update_u)    # v_kt = v_kt-1 + u_kt
         # sparse_rates = [0.75,0.9375,0.9843,0.99]    # 热身阶段的稀疏率
         sparse_rates = [0.75,0.75,0.75,0.80]
         if global_round<4:
             sparse_rate = sparse_rates[global_round]
         else:
             sparse_rate = sparse_rates[-1]
-        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate)    # 计算稀疏后的~G_t和被稀疏部分G_t
+        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate=0.01)    # 计算稀疏后的~G_t和被稀疏部分G_t
+        # debug：退回到无动量、基本不稀疏化的情况：102行momentum=0, 104行改为直接用本次的update, 111行sparse_rate改为0.01
         del model
         return gradient_update,gradient_store,last_update_out,sum(epoch_loss) / len(epoch_loss)
 
@@ -146,7 +147,7 @@ class LocalUpdate(object):
         for key,tensors in model.items():
             flat_tensors = torch.flatten(tensors)
             tensor_len = len(flat_tensors)
-            sample_num = min(tensor_len,80)
+            sample_num = min(tensor_len,80) # 至少取样80次
             index = torch.LongTensor(random.sample(range(tensor_len),sample_num))   # 随机从tensor中选取sample_num个元素，找到阈值
             samples = flat_tensors[index]
             thr = torch.topk(torch.abs(samples),k=int(np.ceil(sample_num*(1-sparse_rate))))[0][-1]  # 取绝对值排在前(1-k)%的元素作为阈值

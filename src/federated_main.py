@@ -60,8 +60,8 @@ if __name__ == '__main__':
         exit('Error: unrecognized model')
 
     # Set the model to train and send it to device.
-    # global_model.to(device)
-    global_model = global_model.cuda()
+    global_model.to(device)
+    # global_model = global_model.cuda()
     global_model.train()
     # print(global_model)
 

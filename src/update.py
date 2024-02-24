@@ -99,6 +99,7 @@ class LocalUpdate(object):
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
         gradient_update_partial = calculate_gradient(model_dict_ori,model.state_dict())
+        print(gradient_update_partial) # debug
         gradient_update_u = gradient_update_partial # merge_gradient(gradient_update_partial,last_update,0.)   # 考虑动量的梯度更新 u_k,t
         last_update_out = gradient_update_u   # 输出并存储uk,t
         gradient_update_v = gradient_update_u # = merge_gradient(gradient_store,gradient_update_u)    # v_kt = v_kt-1 + u_kt

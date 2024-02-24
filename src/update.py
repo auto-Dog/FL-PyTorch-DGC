@@ -108,7 +108,7 @@ class LocalUpdate(object):
             sparse_rate = sparse_rates[global_round]
         else:
             sparse_rate = sparse_rates[-1]
-        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate=sparse_rate)    # 计算稀疏后的~G_t和被稀疏部分G_t
+        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate=0.05)    # 计算稀疏后的~G_t和被稀疏部分G_t
         # gradient_update = gradient_update_v # debug
         # debug：退回到无动量的情况：102行取消merge_gradient()
         del model
@@ -159,7 +159,7 @@ class LocalUpdate(object):
             mask_dict[key] = mask_j # 完成mask_dict[key]中小元素置零，其他元素不变
 
             mask_j_inv = mask_dict_inv[key]
-            mask_j_inv[torch.abs(mask_j_inv)>thr] = 0
+            mask_j_inv[torch.abs(mask_j_inv)>=thr] = 0
             mask_dict_inv[key] = mask_j_inv # 完成mask_dict_inv[key]中大元素置零，其他元素不变
         # print('Ori upload pack norm:',torch.norm(tensors))  # debug
         # print('sparse upload pack norm:',torch.norm(mask_j))    # debug

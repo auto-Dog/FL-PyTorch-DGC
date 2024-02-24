@@ -97,8 +97,7 @@ if __name__ == '__main__':
             momentum_gradient_store[idx] = g_momen  # 储存动量累积值
             local_weights.append(copy.deepcopy(g_updete))   # 这里的local weights实际存储weights的更新值
             local_losses.append(copy.deepcopy(loss))
-        torch.cuda.empty_cache()    # 清空缓存，防止变量累积
-
+        
         # update global weights
         # global_weights = average_weights(local_weights)
         global_weights = average_weights_gradient(global_model.state_dict(),local_weights)
@@ -107,6 +106,7 @@ if __name__ == '__main__':
 
         loss_avg = sum(local_losses) / len(local_losses)
         train_loss.append(loss_avg)
+        torch.cuda.empty_cache()    # 清空缓存，防止变量累积
 
         # Calculate avg training accuracy over all users at every epoch
         list_acc, list_loss = [], []

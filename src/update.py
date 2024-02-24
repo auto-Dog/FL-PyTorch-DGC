@@ -62,11 +62,11 @@ class LocalUpdate(object):
         model.train()
         epoch_loss = []
         if gradient_store == None: # 第一轮训练，用于更新的梯度值为0。 gradient_store即论文中的v_tk-1，也即G^k_t-1
-            gradient_store = model.state_dict()
+            gradient_store = copy.deepcopy(model.state_dict())
             for key,val in gradient_store.items():
                 gradient_store[key] = val*0.0
         if last_update == None: # 第一轮训练，用于动量累计的梯度值为0
-            last_update = model.state_dict()
+            last_update = copy.deepcopy(model.state_dict())
             for key,val in last_update.items():
                 last_update[key] = val*0.0
 
@@ -108,9 +108,11 @@ class LocalUpdate(object):
             sparse_rate = sparse_rates[global_round]
         else:
             sparse_rate = sparse_rates[-1]
-        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate=0.01)    # 计算稀疏后的~G_t和被稀疏部分G_t
-        # debug：退回到无动量、基本不稀疏化的情况：102行momentum=0, 104行改为直接用本次的update, 111行sparse_rate改为0.01
+        # gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate=0.01)    # 计算稀疏后的~G_t和被稀疏部分G_t
+        gradient_update = gradient_update_v
+        # debug：退回到无动量、基本不稀疏化的情况：102行momentum=0, 104行改为直接用本次的update, 111行sparse_rate改为0.01, 11行改112
         del model
+        del model_dict_ori  # 释放内存
         return gradient_update,gradient_store,last_update_out,sum(epoch_loss) / len(epoch_loss)
 
     def inference(self, model):

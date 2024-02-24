@@ -105,7 +105,7 @@ def average_weights(w:list):
     """
     Returns the average of the weights.
     """
-    w_avg = w[0]
+    w_avg = copy.deepcopy(w[0])
     for key in w_avg.keys():
         for i in range(1, len(w)):
             w_avg[key] += w[i][key]
@@ -116,7 +116,7 @@ def average_weights_gradient(w:dict, gradient_packs:list):
     """
     Returns the weights with gradient updates.
     """
-    w_avg = gradient_packs[0]
+    w_avg = copy.deepcopy(gradient_packs[0])
     for key in w_avg.keys():
         for i in range(1, len(gradient_packs)):
             w_avg[key] += gradient_packs[i][key]

@@ -108,7 +108,7 @@ class LocalUpdate(object):
             sparse_rate = sparse_rates[global_round]
         else:
             sparse_rate = sparse_rates[-1]
-        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate=sparse_rates)    # 计算稀疏后的~G_t和被稀疏部分G_t
+        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate=sparse_rate)    # 计算稀疏后的~G_t和被稀疏部分G_t
         # gradient_update = gradient_update_v # debug
         # debug：退回到无动量的情况：102行取消merge_gradient()
         del model

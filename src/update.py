@@ -103,7 +103,7 @@ class LocalUpdate(object):
         last_update_out = gradient_update_u   # 输出并存储uk,t
         gradient_update_v = merge_gradient(gradient_store,gradient_update_u)    # v_kt = v_kt-1 + u_kt
         # sparse_rates = [0.75,0.9375,0.9843,0.99]    # 热身阶段的稀疏率
-        sparse_rates = [0.75,0.75,0.75,0.80]
+        sparse_rates = [0.10,0.20,0.30,0.60]
         if global_round<4:
             sparse_rate = sparse_rates[global_round]
         else:
@@ -176,20 +176,20 @@ def test_inference(args, model, test_dataset):
     criterion = nn.NLLLoss().to(device)
     testloader = DataLoader(test_dataset, batch_size=128,
                             shuffle=False)
+    with torch.no_grad():
+        for batch_idx, (images, labels) in enumerate(testloader):
+            images, labels = images.to(device), labels.to(device)
 
-    for batch_idx, (images, labels) in enumerate(testloader):
-        images, labels = images.to(device), labels.to(device)
+            # Inference
+            outputs = model(images)
+            batch_loss = criterion(outputs, labels)
+            loss += batch_loss.item()
 
-        # Inference
-        outputs = model(images)
-        batch_loss = criterion(outputs, labels)
-        loss += batch_loss.item()
-
-        # Prediction
-        _, pred_labels = torch.max(outputs, 1)
-        pred_labels = pred_labels.view(-1)
-        correct += torch.sum(torch.eq(pred_labels, labels)).item()
-        total += len(labels)
+            # Prediction
+            _, pred_labels = torch.max(outputs, 1)
+            pred_labels = pred_labels.view(-1)
+            correct += torch.sum(torch.eq(pred_labels, labels)).item()
+            total += len(labels)
 
     accuracy = correct/total
     return accuracy, loss

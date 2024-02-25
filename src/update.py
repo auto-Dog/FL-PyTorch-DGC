@@ -99,7 +99,7 @@ class LocalUpdate(object):
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
         gradient_update_partial = calculate_gradient(model_dict_ori,model.state_dict())
-        gradient_update_u = gradient_update_partial # merge_gradient(gradient_update_partial,last_update,0.5)   # 考虑动量的梯度更新 u_k,t
+        gradient_update_u = gradient_update_partial # merge_gradient_withmomentum(gradient_update_partial,last_update,0.5)   # 考虑动量的梯度更新 u_k,t
         last_update_out = gradient_update_u   # 输出并存储uk,t
         gradient_update_v = merge_gradient(gradient_store,gradient_update_u)    # v_kt = v_kt-1 + u_kt
         # sparse_rates = [0.75,0.9375,0.9843,0.99]    # 热身阶段的稀疏率
@@ -207,9 +207,22 @@ def calculate_gradient(model_ori:dict,model:dict)->dict:
 
     return gradient
 
-def merge_gradient(gradient1:dict,gradient2:dict,momentum = 0.0)->dict:
+def merge_gradient(gradient1:dict,gradient2:dict)->dict:
     '''
-    Return plus of two gradient. Momentum will scale the later gradient if it exists
+    Return plus of two gradient.
+    out = gradient1 + gradient2
+    '''
+    if gradient1.keys() != gradient2.keys():
+        raise RuntimeError('Models do not has same structure')
+    gradient = {}
+    for key,_ in gradient1.items():
+        gradient[key] = gradient1[key] + gradient2[key]
+
+    return gradient
+
+def merge_gradient_withmomentum(gradient1:dict,gradient2:dict,momentum = 0.5)->dict:
+    '''
+    Return plus of two gradient with momentum. Momentum will scale the later gradient if it exists
     out = gradient1 + momentum*gradient2
     '''
     if gradient1.keys() != gradient2.keys():

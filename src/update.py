@@ -87,7 +87,7 @@ class LocalUpdate(object):
                 log_probs = model(images)
                 loss = self.criterion(log_probs, labels)
                 loss.backward()
-                # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10)     # clip gradient
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10)     # clip gradient
                 optimizer.step()
 
                 if self.args.verbose and (batch_idx % 10 == 0):

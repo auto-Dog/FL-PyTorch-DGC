@@ -46,7 +46,7 @@ if __name__ == '__main__':
         elif args.dataset == 'cifar':
             # global_model = CNNCifar(args=args)
             from torchvision import models
-            global_model = models.resnet50(num_classes = 10)    # 和DGC实验保持一致
+            global_model = models.resnet18(num_classes = 10)    # 和DGC实验保持一致
 
     elif args.model == 'mlp':
         # Multi-layer preceptron

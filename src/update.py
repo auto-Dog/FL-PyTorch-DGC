@@ -99,16 +99,16 @@ class LocalUpdate(object):
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
         gradient_update_partial = calculate_gradient(model_dict_ori,model.state_dict())
-        gradient_update_u = merge_gradient_withmomentum(gradient_update_partial,last_update,0.0)   # 考虑动量的梯度更新 u_k,t
+        gradient_update_u = merge_gradient_withmomentum(gradient_update_partial,last_update,0.5)   # 考虑动量的梯度更新 u_k,t
         last_update_out = gradient_update_u   # 输出并存储uk,t
         gradient_update_v = merge_gradient(gradient_store,gradient_update_u)    # v_kt = v_kt-1 + u_kt
         # sparse_rates = [0.75,0.9375,0.9843,0.99]    # 热身阶段的稀疏率
-        sparse_rates = [0.10,0.20,0.30,0.60]
+        sparse_rates = [0.10,0.20,0.30,0.40]
         if global_round<4:
             sparse_rate = sparse_rates[global_round]
         else:
             sparse_rate = sparse_rates[-1]
-        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate=0.01)    # 计算稀疏后的~G_t和被稀疏部分G_t
+        gradient_update, gradient_store = self.sparse_gradient_mask(gradient_update_v,sparse_rate=sparse_rate)    # 计算稀疏后的~G_t和被稀疏部分G_t
         # gradient_update = gradient_update_v # debug
         # debug: 102行动量设为0，111行稀疏率设为0.01
         del model

@@ -99,7 +99,7 @@ class LocalUpdate(object):
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
         gradient_update_partial = calculate_gradient(model_dict_ori,model.state_dict())
-        gradient_update_u = merge_gradient_withmomentum(gradient_update_partial,last_update,0.5)   # 考虑动量的梯度更新 u_k,t
+        gradient_update_u = merge_gradient_withmomentum(gradient_update_partial,last_update,0.2)   # 考虑动量的梯度更新 u_k,t
         last_update_out = gradient_update_u   # 输出并存储uk,t
         gradient_update_v = merge_gradient(gradient_store,gradient_update_u)    # v_kt = v_kt-1 + u_kt
         # sparse_rates = [0.75,0.9375,0.9843,0.99]    # 热身阶段的稀疏率
@@ -121,20 +121,20 @@ class LocalUpdate(object):
 
         model.eval()
         loss, total, correct = 0.0, 0.0, 0.0
+        with torch.no_grad():
+            for batch_idx, (images, labels) in enumerate(self.testloader):
+                images, labels = images.to(self.device), labels.to(self.device)
 
-        for batch_idx, (images, labels) in enumerate(self.testloader):
-            images, labels = images.to(self.device), labels.to(self.device)
+                # Inference
+                outputs = model(images)
+                batch_loss = self.criterion(outputs, labels)
+                loss += batch_loss.item()
 
-            # Inference
-            outputs = model(images)
-            batch_loss = self.criterion(outputs, labels)
-            loss += batch_loss.item()
-
-            # Prediction
-            _, pred_labels = torch.max(outputs, 1)
-            pred_labels = pred_labels.view(-1)
-            correct += torch.sum(torch.eq(pred_labels, labels)).item()
-            total += len(labels)
+                # Prediction
+                _, pred_labels = torch.max(outputs, 1)
+                pred_labels = pred_labels.view(-1)
+                correct += torch.sum(torch.eq(pred_labels, labels)).item()
+                total += len(labels)
 
         accuracy = correct/total
         return accuracy, loss
